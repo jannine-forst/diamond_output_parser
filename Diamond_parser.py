@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import sys
 import re
+import glob
+import os
+import time
 
 ##########################################
 ############# DIAMOND PARSER #############
@@ -27,10 +30,10 @@ def organismFinder(self):
 			while not re.findall(count, nextline): 
 				nextline = next(input_file)
 			
-			#If it finds the count, pull out the number
+			#If it finds the count, pull out the number and write the sample, name, and count to file
 			if re.findall(count, nextline): 
 				for linecount in re.finditer(r"(.*>)([1-9]+)(<.*)", nextline):
-					info = str(organismname+"\t"+linecount.group(2)+"\n")
+					info = str(basename+"\t"+organismname+"\t"+linecount.group(2)+"\n")
 					outfile.write(info)
 			
 			#When it finds the next taxon, stop looking - otherwise we'll get false counts
@@ -46,9 +49,12 @@ def organismFinder(self):
 ############# Definition of variables #############
 
 #First argument is the input file you want analyzed
-diamond_matches = sys.argv[1]
-#Add error if not *.dmnd.krona.html 
+path_to_input_files = sys.argv[1]
+#Add error if no *.dmnd.krona.html 
 #Put something here to check for two arguments
+
+#Take the time for outfile name
+timestr = time.strftime("%Y%-m%-d_%H:%M")
 
 #Variables
 Total = '<node name="Root">'
@@ -72,22 +78,29 @@ organismlist = ["Yersinia",
 
 ############# Program Start #############
 
-#Opens a file to write the results to:
-for base in re.finditer(r"(^.+\.)all.+", diamond_matches):
-	basename = base.group(1)
-
-outfilename = basename+"DMNDparsed.outfile.txt"
+#Creates an outfile to write to: (with date/time stamp)
+outfilename = path_to_input_files+"DMNDparsed.outfile."+timestr+".txt"
 outfile = open(outfilename, "w")
 
-#Opens the file and in every line looks for the organism defined
-with open(diamond_matches, "r") as input_file:
-	#Write the header to file
-	outfile.write("Organism"+"\t"+"Count"+"\n")
-	
-	#Look for each organism in the list and pull out counts/name if found
-	for line in input_file:
-		for organism in organismlist:
-			organismFinder(organism)
+#Put an error here in case no *.dmnd.krona.html files are found
+#Write the header to file
+outfile.write("Sample"+"\t"+"Organism"+"\t"+"Count"+"\n")
+
+#Opens the directory and looks for all *.dmnd.krona.html files:
+for file in glob.glob(os.path.join(path_to_input_files , '*.dmnd.krona.html')):
+
+	#Opens the file and in every line looks for the organism defined
+	with open(file, "r") as input_file:
+		
+		# Take the basename of each sample
+		nopath = os.path.basename(file)
+		for base in re.finditer(r"(.+).all.+", nopath):
+ 			basename = base.group(1)
+
+		#Look for each organism in the list and pull out counts/name if found
+		for line in input_file:
+			for organism in organismlist:
+				organismFinder(organism)
 
 outfile.close()
 
