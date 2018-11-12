@@ -14,26 +14,31 @@ import re
 
 ############# Definition of functions #############
 
-
+#A function to look for the organism name in the html file and pull out the matching name AND read count
 def organismFinder(self):
 	if re.findall(self, line):
+		#Set the name as it is, not as it was searched for. Will list all found.
+		#(e.g. search for Yersinia might bring up Yersinia pestis and Yersiniaceae)
 		for name in re.finditer(r".+\"(.+)\"", line):
 			organismname = name.group(1)
-			#print(organismname)
 			nextline = next(input_file)
-			while not re.findall(count, nextline):
+			
+			#If it doesn't find the read count in the first line, continue through more lines until it finds it
+			while not re.findall(count, nextline): 
 				nextline = next(input_file)
-				#print("Hit while not loop")
-			if re.findall(count, nextline):
+			
+			#If it finds the count, pull out the number
+			if re.findall(count, nextline): 
 				for linecount in re.finditer(r"(.*>)([1-9]+)(<.*)", nextline):
 					info = str(organismname+"\t"+linecount.group(2)+"\n")
 					outfile.write(info)
-				#print("Count here, later")
-			elif re.findall(nextID, nextline):
-				#print("End line, later")
+			
+			#When it finds the next taxon, stop looking - otherwise we'll get false counts
+			elif re.findall(nextID, nextline): 
 				break
-			else:
-				#print("Not this line, later")
+			
+			#Do I really need this? If it doesn't find the next taxon or the count, continue going through
+			else: 
 				continue
 
 
@@ -50,8 +55,8 @@ Total = '<node name="Root">'
 count = "<count>"
 nextID = "node name"
 
-#Organisms to find:
-
+#One day this will have an option to import from a file or use this as default
+#Organisms to look for:
 organismlist = ["Yersinia",
 	"Mycobacterium", 
 	"Vibrio cholerae", 
@@ -68,30 +73,21 @@ organismlist = ["Yersinia",
 ############# Program Start #############
 
 #Opens a file to write the results to:
-
 for base in re.finditer(r"(^.+\.)all.+", diamond_matches):
 	basename = base.group(1)
 
 outfilename = basename+"DMNDparsed.outfile.txt"
 outfile = open(outfilename, "w")
 
-#print(outfilename)
-
 #Opens the file and in every line looks for the organism defined
 with open(diamond_matches, "r") as input_file:
 	#Write the header to file
 	outfile.write("Organism"+"\t"+"Count"+"\n")
+	
+	#Look for each organism in the list and pull out counts/name if found
 	for line in input_file:
 		for organism in organismlist:
 			organismFinder(organism)
-
-
-#This one goes just by the name in the function
-	# for line in input_file: #One day I will get this to work iteratively over each organism in a list
-	# 	if organismFinder(yersinia) != None:
-	# 		outfile.write(organismFinder(yersinia)+"\n") #There has to be a better way to iterate over these!
-	# 	if organismFinder(Myc) != None:
-	# 		outfile.write(organismFinder(Myc)+"\n")
 
 outfile.close()
 
