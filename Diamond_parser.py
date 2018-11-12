@@ -54,7 +54,7 @@ path_to_input_files = sys.argv[1]
 #Put something here to check for two arguments
 
 #Take the time for outfile name
-timestr = time.strftime("%Y%-m%-d_%H:%M")
+timestr = time.strftime("%Y-%m-%d_%H.%M")
 
 #Variables
 Total = '<node name="Root">'
