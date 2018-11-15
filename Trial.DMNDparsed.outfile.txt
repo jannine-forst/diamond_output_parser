@@ -1,4 +1,0 @@
-Organism	Count
-Mycobacterium	18
-Mycobacterium tuberculosis complex	17
-Mycobacterium tuberculosis	16
