@@ -1,6 +1,6 @@
 # diamond_output_parser
 
-Usage: Diamond_parser.py /path/to/dir/with/files/
+### Usage: Diamond_parser.py /path/to/dir/with/files/
 
 Output:
 1) Text file containing organisms of interest and the number of reads assigned to them
@@ -17,3 +17,8 @@ Lots of improvements still need to be made!!
 - Nicer graphs
 - Maybe the option of combining graphs together and colour-coding the samples so it's all on one graph
 - More comments in the script itself
+
+
+
+### Trial_DMND Folder
+- Contains two examples and what their output should look like
