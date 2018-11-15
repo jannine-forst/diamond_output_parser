@@ -4,6 +4,13 @@ import re
 import glob
 import os
 import time
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 ##########################################
 ############# DIAMOND PARSER #############
@@ -32,19 +39,17 @@ def organismFinder(self):
 			
 			#If it finds the count, pull out the number and write the sample, name, and count to file
 			if re.findall(count, nextline): 
-				for linecount in re.finditer(r"(.*>)([1-9]+)(<.*)", nextline):
+				for linecount in re.finditer(r"(.*>)([0-9]+)(<.*)", nextline):
 					info = str(basename+"\t"+organismname+"\t"+linecount.group(2)+"\n")
 					outfile.write(info)
 			
 			#When it finds the next taxon, stop looking - otherwise we'll get false counts
-			elif re.findall(nextID, nextline): 
+			elif re.findall(nextID, nextline):
 				break
 			
 			#Do I really need this? If it doesn't find the next taxon or the count, continue going through
 			else: 
 				continue
-
-
 
 ############# Definition of variables #############
 
@@ -54,7 +59,7 @@ path_to_input_files = sys.argv[1]
 #Put something here to check for two arguments
 
 #Take the time for outfile name
-timestr = time.strftime("%Y-%m-%d_%H.%M")
+timestr = time.strftime("%Y.%m.%d_%H-%M")
 
 #Variables
 Total = '<node name="Root">'
@@ -79,7 +84,7 @@ organismlist = ["Yersinia",
 ############# Program Start #############
 
 #Creates an outfile to write to: (with date/time stamp)
-outfilename = path_to_input_files+"DMNDparsed.outfile."+timestr+".txt"
+outfilename = path_to_input_files+"DMNDparsed.counts.outfile."+timestr+".txt"
 outfile = open(outfilename, "w")
 
 #Put an error here in case no *.dmnd.krona.html files are found
@@ -104,9 +109,107 @@ for file in glob.glob(os.path.join(path_to_input_files , '*.dmnd.krona.html')):
 
 outfile.close()
 
-#Later this will also will create a graph!
+############# Math Start #############
+#For now, this will be a separate section and a new outfile
+
+#Make list of dictionaries:
+#[{'Name' : 'samplename', 'Organism':'organism', 'Proportion':'readcount/totalreads'}, again]
+
+name_dict = {}
+all_list = []
+# each_list = []
+
+with open(outfilename, "r") as countfile:
+	for line in countfile:
+ 		name,organism,readcount = line.split("\t")
+ 		
+ 		#Make sure not to take the header into the graph
+ 		if organism != "Organism":
+
+ 			#Make sure not to take the total read # into the graph
+ 			if organism == "Root":
+ 				total_count = readcount
+ 				# print("Hits this bit")
+ 				# name_dict["Name"] = name
+ 				# name_dict["Organism"] = "PositiveControl"
+ 				# name_dict["Proportion"] = "{:2%}".format(0.01)
+ 				# all_list.append(name_dict.copy())
+
+ 			#Otherwise, enter into dictionary
+ 			else:
+ 				name_dict["Name"] = name
+ 				name_dict["Organism"] = organism
+ 				name_dict["Proportion"] = int(readcount)/int(total_count)
+ 				all_list.append(name_dict.copy())
+ 				# all_list.append(each_list.copy())
+
+# print(all_list)
+
+#This is probably a ham-fisted way of doing this but... for now
+
+name_list = []
+org_list = []
+prop_list = []
+sample_list = {}
+new_dict = {}
+new_dict_list = []
+
+for each in all_list:
+	name_list.append(each["Name"])
+	org_list.append(each["Organism"])
+	prop_list.append(each["Proportion"])
+	title = each["Name"]
+
+# print(org_list)
+# print(prop_list)
+
+sample = "Hello"
+sample_list.clear()
+multiPDF = PdfPages(path_to_input_files+"DMNDparsed.graphs.outfile."+timestr+".pdf") 
+
+# print(len(name_list))
+for i in range(len(name_list)):
+	if sample == name_list[i]:
+		# print("Match at sample = name_list")
+		# new_dict[org_list[i]] = prop_list[i]
+		# new_dict["Proportion"] = prop_list[i]
+		sample_list[org_list[i]] = prop_list[i]
+
+	else:
+		if sample != "Hello":
+			# print("Match at no hello")
+			# print(sorted(sample_list.values()))
+			plt.bar(range(len(sample_list)), list(sorted(sample_list.values())), align='center')
+			plt.xticks(range(len(sample_list)), list(sorted(sample_list, key=sample_list.__getitem__)), rotation = 90)
+			plt.title(sample)
+			plt.xlabel("Pathogens")
+			plt.ylabel("Proportion of assigned reads in total")
+			plt.savefig(multiPDF, format = 'pdf', bbox_inches='tight')
+			plt.clf()
+			# print(sample_list)
+
+			sample = name_list[i]
+			sample_list.clear()
+
+			sample_list["PositiveControl"] = 0.01
+
+		else:
+			# print("Match at yes hello")
+			sample = name_list[i]
+			sample_list.clear()
+			sample_list[org_list[i]] = prop_list[i]
+			sample_list["PositiveControl"] = 0.01
+
+plt.bar(range(len(sample_list)), list(sorted(sample_list.values())), align='center')
+plt.xticks(range(len(sample_list)), list(sorted(sample_list, key=sample_list.__getitem__)), rotation = 90)
+plt.title(sample)
+plt.xlabel("Pathogens")
+plt.ylabel("Proportion of assigned reads in total")
+plt.savefig(multiPDF, format = 'pdf', bbox_inches='tight')
+plt.clf()
+
+multiPDF.close()
+
 #Now we need this as a percentage
-#And it'll pop out a graph for all the samples?
-#Organism on the x axis, % on the y axis
-#Sample coloured columns
+#The graph needs to be improved to compare more samples together? Maybe?
 

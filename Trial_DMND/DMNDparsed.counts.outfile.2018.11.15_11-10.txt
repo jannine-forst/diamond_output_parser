@@ -1,0 +1,16 @@
+Sample	Organism	Count
+Example2	Root	1623
+Example2	Chlamydiae	2
+Example2	Chlamydiales	2
+Example2	Chlamydiaceae	2
+Example2	Chlamydia	2
+Example2	Chlamydia psittaci	2
+Example2	Mycobacterium	18
+Example2	Mycobacterium tuberculosis complex	18
+Example2	Mycobacterium tuberculosis	18
+Example2	Clostridium botulinum	1
+Example1	Root	6149
+Example1	Mycobacterium	4
+Example1	Mycobacterium tuberculosis complex	3
+Example1	Mycobacterium tuberculosis	3
+Example1	Yersiniaceae	2
