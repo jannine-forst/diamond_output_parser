@@ -2,6 +2,10 @@
 
 ### Usage: Diamond_parser.py /path/to/dir/with/files/
 
+![Diamond cutting history; Diagram by Juergen Schoner (July 2004), with English translation by Gregory Phillips](https://upload.wikimedia.org/wikipedia/commons/b/b9/Diamond_cut_history.png)
+
+###### (Diamond cutting history; Diagram by Juergen Schoner (July 2004), with English translation by Gregory Phillips)
+
 Output:
 1) Text file containing organisms of interest and the number of reads assigned to them
 	- currently this is a fixed list within the script, later versions will have this as something you can provide
