@@ -8,7 +8,6 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FormatStrFormatter
 from matplotlib.backends.backend_pdf import PdfPages
 
 
@@ -16,6 +15,8 @@ from matplotlib.backends.backend_pdf import PdfPages
 ############# DIAMOND PARSER #############
 ############## JF Nov 2018 ###############
 ##########################################
+
+##### A WORK IN PROGRESS #####
 
 # Input needed:
 # *.dmnd.krona.html file
@@ -114,12 +115,15 @@ outfile.close()
 
 #Make list of dictionaries:
 #[{'Name' : 'samplename', 'Organism':'organism', 'Proportion':'readcount/totalreads'}, again]
-
 name_dict = {}
 all_list = []
-# each_list = []
 
+#I think now that I've got the graphing working I can change this now
+
+#Open the previous outfile with the counts
 with open(outfilename, "r") as countfile:
+
+	#In every line split into variables
 	for line in countfile:
  		name,organism,readcount = line.split("\t")
  		
@@ -129,11 +133,6 @@ with open(outfilename, "r") as countfile:
  			#Make sure not to take the total read # into the graph
  			if organism == "Root":
  				total_count = readcount
- 				# print("Hits this bit")
- 				# name_dict["Name"] = name
- 				# name_dict["Organism"] = "PositiveControl"
- 				# name_dict["Proportion"] = "{:2%}".format(0.01)
- 				# all_list.append(name_dict.copy())
 
  			#Otherwise, enter into dictionary
  			else:
@@ -141,73 +140,97 @@ with open(outfilename, "r") as countfile:
  				name_dict["Organism"] = organism
  				name_dict["Proportion"] = int(readcount)/int(total_count)
  				all_list.append(name_dict.copy())
- 				# all_list.append(each_list.copy())
 
-# print(all_list)
+
 
 #This is probably a ham-fisted way of doing this but... for now
 
+#Make the lists
 name_list = []
 org_list = []
 prop_list = []
-sample_list = {}
-new_dict = {}
-new_dict_list = []
 
+#Make a list for each of the variables
 for each in all_list:
 	name_list.append(each["Name"])
 	org_list.append(each["Organism"])
 	prop_list.append(each["Proportion"])
 	title = each["Name"]
 
-# print(org_list)
-# print(prop_list)
+# Make the dictionary since I can get a graph working from dictionary variables
+sample_dict = {}
+new_dict = {}
+new_dict_list = []
 
+#Set sample name to something that will never be a sample name, hopefully
 sample = "Hello"
-sample_list.clear()
+sample_dict.clear()
+
+#Initiate the multi-page pdf
 multiPDF = PdfPages(path_to_input_files+"DMNDparsed.graphs.outfile."+timestr+".pdf") 
 
-# print(len(name_list))
+#Go through for every named item
 for i in range(len(name_list)):
-	if sample == name_list[i]:
-		# print("Match at sample = name_list")
-		# new_dict[org_list[i]] = prop_list[i]
-		# new_dict["Proportion"] = prop_list[i]
-		sample_list[org_list[i]] = prop_list[i]
 
+	#If the sample name is the same as before, add it to the sample dictionary
+	if sample == name_list[i]:
+		sample_dict[org_list[i]] = prop_list[i]
+
+	#If the sample name is not the same as before graph it and reset variables/dictionaries
 	else:
 		if sample != "Hello":
-			# print("Match at no hello")
-			# print(sorted(sample_list.values()))
-			plt.bar(range(len(sample_list)), list(sorted(sample_list.values())), align='center')
-			plt.xticks(range(len(sample_list)), list(sorted(sample_list, key=sample_list.__getitem__)), rotation = 90)
+
+			#Make a graph using the values from the dictionary (proportions) on y axis
+			#also sort by value so the largest are at the top
+			plt.bar(range(len(sample_dict)), list(sorted(sample_dict.values())), align='center')
+			
+			#and the organism of interest name on x axis
+			#Both have to be sorted by value or they get assigned incorrectly
+			plt.xticks(range(len(sample_dict)), list(sorted(sample_dict, key=sample_dict.__getitem__)), rotation = 90)
+			
+			#Set title and labels
 			plt.title(sample)
 			plt.xlabel("Pathogens")
 			plt.ylabel("Proportion of assigned reads in total")
+			
+			#Save the figure to the multipage pdf opened before
 			plt.savefig(multiPDF, format = 'pdf', bbox_inches='tight')
+
+			#Then clear the figure so it doesn't bleed into the next figure made
 			plt.clf()
-			# print(sample_list)
 
+			#After graphing, change sample name to new sample name and clear dictionary
 			sample = name_list[i]
-			sample_list.clear()
+			sample_dict.clear()
 
-			sample_list["PositiveControl"] = 0.01
+			#Re-add the indicator for 1% of readcount
+			sample_dict["PositiveControl"] = 0.01
 
 		else:
-			# print("Match at yes hello")
-			sample = name_list[i]
-			sample_list.clear()
-			sample_list[org_list[i]] = prop_list[i]
-			sample_list["PositiveControl"] = 0.01
 
-plt.bar(range(len(sample_list)), list(sorted(sample_list.values())), align='center')
-plt.xticks(range(len(sample_list)), list(sorted(sample_list, key=sample_list.__getitem__)), rotation = 90)
+			#If the sample was "Hello", then this is the first real sample!
+			#Set the sample name to the sample (instead of "Hello")
+			sample = name_list[i]
+
+			#Just in case, clear the dictionary
+			sample_dict.clear()
+
+			#Add in the data for this new sample's dictionary and also add the 1% indicator
+			sample_dict[org_list[i]] = prop_list[i]
+			sample_dict["PositiveControl"] = 0.01
+
+
+#Because the range function ends and I can't find a way to tell it to garph after it ends
+#and because the list is kept still, graph as above the last sample in the list
+plt.bar(range(len(sample_dict)), list(sorted(sample_dict.values())), align='center')
+plt.xticks(range(len(sample_dict)), list(sorted(sample_dict, key=sample_dict.__getitem__)), rotation = 90)
 plt.title(sample)
 plt.xlabel("Pathogens")
 plt.ylabel("Proportion of assigned reads in total")
 plt.savefig(multiPDF, format = 'pdf', bbox_inches='tight')
 plt.clf()
 
+#Close the multipage pdf
 multiPDF.close()
 
 #Now we need this as a percentage
